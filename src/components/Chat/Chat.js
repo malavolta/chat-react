@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import queryString from "query-string";
 import io from "socket.io-client";
 
-import "./Chat.css";
+import TextContainer from "../TextContainer/TextContainer";
+import Messages from "../Messages/Messages";
 import InfoBar from "../InfoBar/InfoBar";
 import Input from "../Input/Input";
-import Messages from "../Messages/Messages";
-import TextContainer from "../TextContainer/TextContainer";
+
+import "./Chat.css";
 
 let socket;
 
@@ -16,47 +17,40 @@ const Chat = ({ location }) => {
   const [users, setUsers] = useState("");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const ENDPOINT = "https://react-chat-malavolta.herokuapp.com/";
+  const ENDPOINT = "https://project-chat-application.herokuapp.com/";
 
   useEffect(() => {
     const { name, room } = queryString.parse(location.search);
 
     socket = io(ENDPOINT);
 
-    setName(name);
     setRoom(room);
+    setName(name);
 
-    socket.emit("join", { name, room }, () => {});
-
-    return () => {
-      socket.emit("disconnect");
-
-      socket.off();
-    };
+    socket.emit("join", { name, room }, (error) => {
+      if (error) {
+        alert(error);
+      }
+    });
   }, [ENDPOINT, location.search]);
 
   useEffect(() => {
     socket.on("message", (message) => {
-      setMessages([...messages, message]);
+      setMessages((messages) => [...messages, message]);
     });
-  }, [messages]);
 
-  useEffect(() => {
     socket.on("roomData", ({ users }) => {
-      console.log("roomData");
-      console.log(users);
+      setUsers(users);
     });
-  }, [users]);
+  }, []);
 
   const sendMessage = (event) => {
     event.preventDefault();
 
     if (message) {
-      socket.emit("sendMessage", message, () => setMessages(""));
+      socket.emit("sendMessage", message, () => setMessage(""));
     }
   };
-
-  console.log(message, messages);
 
   return (
     <div className="outerContainer">
